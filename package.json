@@ -2,6 +2,6 @@
   "name": "filedrop-functions",
   "version": "1.0.0",
   "dependencies": {
-    "firebase-admin": "^12.0.0"
+    "@supabase/supabase-js": "^2.x.x"
   }
 }

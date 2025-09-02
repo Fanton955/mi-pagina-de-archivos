@@ -1,5 +1,4 @@
-import { auth } from './firebase-init.js';
-import { onAuthStateChanged, updatePassword, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { supabase } from './supabase-init.js';
 
 const userEmail = document.getElementById('user-email');
 const logoutButton = document.getElementById('logout-button');
@@ -10,20 +9,18 @@ const deleteAccountButton = document.getElementById('delete-account-button');
 
 let currentUser = null;
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-        userEmail.textContent = user.email;
+supabase.auth.onAuthStateChange((event, session) => {
+    if (session && session.user) {
+        currentUser = session.user;
+        userEmail.textContent = currentUser.email;
     } else {
         window.location.href = 'login.html';
     }
 });
 
 logoutButton.addEventListener('click', async () => {
-    try {
-        await signOut(auth);
-        window.location.href = 'index.html';
-    } catch (error) {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
         console.error('Error al cerrar sesión:', error);
     }
 });
@@ -38,20 +35,17 @@ changePasswordForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    try {
-        await updatePassword(currentUser, newPassword);
+    const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+    });
+
+    if (error) {
+        passwordMessage.textContent = `Error: ${error.message}`;
+        passwordMessage.className = 'text-danger';
+    } else {
         passwordMessage.textContent = '¡Contraseña actualizada con éxito!';
         passwordMessage.className = 'text-success';
         changePasswordForm.reset();
-    } catch (error) {
-        passwordMessage.textContent = `Error: ${error.message}`;
-        passwordMessage.className = 'text-danger';
-        console.error('Error updating password:', error);
-        // For security reasons, Firebase might require recent login to change password.
-        // You might need to implement re-authentication here.
-        if (error.code === 'auth/requires-recent-login') {
-            passwordMessage.textContent = 'Esta operación es sensible y requiere autenticación reciente. Por favor, inicia sesión de nuevo.';
-        }
     }
 });
 
@@ -60,15 +54,27 @@ deleteAccountButton.addEventListener('click', async () => {
 
     if (confirmation) {
         try {
-            await deleteUser(currentUser);
-            alert('Tu cuenta ha sido eliminada.');
-            window.location.href = 'index.html';
+            const response = await fetch('/netlify/functions/delete-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabase.auth.session().access_token}` // Pass the user's JWT
+                },
+                body: JSON.stringify({ userId: currentUser.id }) // Pass the user ID
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Tu cuenta ha sido eliminada.');
+                window.location.href = 'index.html';
+            } else {
+                alert(`Error al eliminar la cuenta: ${result.message}`);
+                console.error('Error deleting user:', result.message);
+            }
         } catch (error) {
             alert(`Error al eliminar la cuenta: ${error.message}`);
             console.error('Error deleting user:', error);
-            if (error.code === 'auth/requires-recent-login') {
-                alert('Esta operación es sensible y requiere autenticación reciente. Por favor, inicia sesión de nuevo.');
-            }
         }
     }
 });

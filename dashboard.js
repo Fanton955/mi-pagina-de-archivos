@@ -1,6 +1,4 @@
-import { auth, storage } from './firebase-init.js';
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-import { ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+import { supabase } from './supabase-init.js';
 
 const userEmail = document.getElementById('user-email');
 const logoutButton = document.getElementById('logout-button');
@@ -10,9 +8,13 @@ const fileInput = document.getElementById('file-input');
 const previewArea = document.getElementById('preview-area');
 const fileList = document.getElementById('file-list');
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        userEmail.textContent = user.email;
+let currentUser = null;
+
+// --- Auth --- //
+supabase.auth.onAuthStateChange((event, session) => {
+    if (session && session.user) {
+        currentUser = session.user;
+        userEmail.textContent = currentUser.email;
         listFiles();
     } else {
         window.location.href = 'login.html';
@@ -20,10 +22,8 @@ onAuthStateChanged(auth, (user) => {
 });
 
 logoutButton.addEventListener('click', async () => {
-    try {
-        await signOut(auth);
-        window.location.href = 'index.html';
-    } catch (error) {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
         console.error('Error al cerrar sesión:', error);
     }
 });
@@ -107,62 +107,60 @@ function createPreview(file) {
     previewArea.appendChild(previewItem);
 }
 
-function uploadFile(file) {
-    const user = auth.currentUser;
-    if (!user) return;
+async function uploadFile(file) {
+    if (!currentUser) return;
 
-    const storageRef = ref(storage, `${user.uid}/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
+    const filePath = `${currentUser.id}/${file.name}`;
+    const { error } = await supabase.storage
+        .from('uploads') // Supabase uses buckets, we need to create one named 'uploads'
+        .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+        });
+    
     const progressBar = previewArea.querySelector('.progress-bar');
     const uploadStatus = previewArea.querySelector('.upload-status');
 
-    uploadTask.on('state_changed', 
-        (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            progressBar.style.width = `${progress}%`;
-            progressBar.setAttribute('aria-valuenow', progress);
-            uploadStatus.textContent = `Subiendo... ${Math.round(progress)}%`;
-        }, 
-        (error) => {
-            uploadStatus.innerHTML = `<span class="text-danger">La subida falló: ${error.code}</span>`;
-        }, 
-        () => {
-            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                uploadStatus.innerHTML = `¡Subido! <a href="${downloadURL}" target="_blank">Enlace de Descarga</a>`;
-                listFiles();
-            });
-        }
-    );
+    if (error) {
+        uploadStatus.innerHTML = `<span class="text-danger">La subida falló: ${error.message}</span>`;
+    } else {
+        // For simplicity, we'll just show 100% on success as Supabase JS client v2 doesn't have progress events for uploads yet.
+        progressBar.style.width = `100%`;
+        progressBar.setAttribute('aria-valuenow', 100);
+        const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+        uploadStatus.innerHTML = `¡Subido! <a href="${data.publicUrl}" target="_blank">Enlace de Descarga</a>`;
+        listFiles();
+    }
 }
 
 // --- File List --- //
 
 async function listFiles() {
-    const user = auth.currentUser;
-    if (!user) return;
+    if (!currentUser) return;
 
-    const listRef = ref(storage, user.uid);
-    fileList.innerHTML = '';
+    const { data, error } = await supabase.storage.from('uploads').list(currentUser.id, {
+        limit: 100,
+        offset: 0,
+        sortBy: { column: 'name', order: 'asc' },
+    });
 
-    try {
-        const res = await listAll(listRef);
-        for (const itemRef of res.items) {
-            const metadata = await getMetadata(itemRef);
-            const downloadURL = await getDownloadURL(itemRef);
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><i class="${getFileIcon(metadata.contentType)} me-2"></i>${metadata.name}</td>
-                <td>${(metadata.size / 1024 / 1024).toFixed(2)} MB</td>
-                <td>${new Date(metadata.timeCreated).toLocaleDateString()}</td>
-                <td><a href="${downloadURL}" target="_blank">enlace</a></td>
-                <td><button class="btn btn-sm btn-outline-primary copy-link-btn" data-url="${downloadURL}">Copiar</button></td>
-            `;
-            fileList.appendChild(row);
-        }
-    } catch (error) {
+    if (error) {
         console.error('Error al listar los archivos:', error);
+        return;
+    }
+
+    fileList.innerHTML = '';
+    for (const file of data) {
+        const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(`${currentUser.id}/${file.name}`);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><i class="${getFileIcon(file.metadata.mimetype)} me-2"></i>${file.name}</td>
+            <td>${(file.metadata.size / 1024 / 1024).toFixed(2)} MB</td>
+            <td>${new Date(file.created_at).toLocaleDateString()}</td>
+            <td><a href="${urlData.publicUrl}" target="_blank">enlace</a></td>
+            <td><button class="btn btn-sm btn-outline-primary copy-link-btn" data-url="${urlData.publicUrl}">Copiar</button></td>
+        `;
+        fileList.appendChild(row);
     }
 }
 

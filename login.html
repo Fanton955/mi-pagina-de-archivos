@@ -38,8 +38,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
-        import { auth } from './firebase-init.js';
-        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { supabase } from './supabase-init.js';
 
         const loginForm = document.getElementById('login-form');
         const errorMessage = document.getElementById('error-message');
@@ -49,13 +48,15 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                // Signed in 
-                const user = userCredential.user;
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                errorMessage.textContent = `Error: ${error.message}`;
+            } else {
                 window.location.href = 'dashboard.html';
-            } catch (error) {
-                errorMessage.textContent = error.message;
             }
         });
     </script>

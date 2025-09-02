@@ -25,7 +25,7 @@ logoutButton.addEventListener('click', async () => {
         await signOut(auth);
         window.location.href = 'index.html';
     } catch (error) {
-        console.error('Error signing out:', error);
+        console.error('Error al cerrar sesión:', error);
     }
 });
 
@@ -69,7 +69,7 @@ function handleDrop(e) {
 
 function handleFiles(files) {
     if (files.length === 0) {
-        resultDiv.innerHTML = 'Please select a file to upload.';
+        resultDiv.innerHTML = 'Por favor, selecciona un archivo para subir.';
         return;
     }
     uploadFile(files[0]);
@@ -87,14 +87,14 @@ function uploadFile(file) {
     uploadTask.on('state_changed', 
         (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            resultDiv.innerHTML = `Upload is ${progress.toFixed(2)}% done`;
+            resultDiv.innerHTML = `Subida al ${progress.toFixed(2)}%`;
         }, 
         (error) => {
-            resultDiv.innerHTML = `Upload failed: ${error.message}`;
+            resultDiv.innerHTML = `La subida falló: ${error.message}`;
         }, 
         () => {
             getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                resultDiv.innerHTML = `File uploaded successfully! <a href="${downloadURL}" target="_blank">Download Link</a>`;
+                resultDiv.innerHTML = `¡Archivo subido con éxito! <a href="${downloadURL}" target="_blank">Enlace de Descarga</a>`;
                 listFiles();
             });
         }
@@ -119,12 +119,12 @@ async function listFiles() {
                     <td>${itemRef.name}</td>
                     <td>...</td>
                     <td>...</td>
-                    <td><a href="${downloadURL}" target="_blank">link</a></td>
+                    <td><a href="${downloadURL}" target="_blank">enlace</a></td>
                 `;
                 fileList.appendChild(row);
             });
         });
     } catch (error) {
-        console.error('Error listing files:', error);
+        console.error('Error al listar los archivos:', error);
     }
 }

@@ -124,7 +124,6 @@ async function uploadFile(file) {
     if (error) {
         uploadStatus.innerHTML = `<span class="text-danger">La subida falló: ${error.message}</span>`;
     } else {
-        // For simplicity, we'll just show 100% on success as Supabase JS client v2 doesn't have progress events for uploads yet.
         progressBar.style.width = `100%`;
         progressBar.setAttribute('aria-valuenow', 100);
         const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);

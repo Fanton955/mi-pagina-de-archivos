@@ -1,5 +1,3 @@
-import { supabase } from './supabase-init.js';
-
 const userEmail = document.getElementById('user-email');
 const logoutButton = document.getElementById('logout-button');
 const uploadArea = document.getElementById('upload-area');

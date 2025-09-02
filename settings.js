@@ -1,5 +1,3 @@
-import { supabase } from './supabase-init.js';
-
 const userEmail = document.getElementById('user-email');
 const logoutButton = document.getElementById('logout-button');
 const changePasswordForm = document.getElementById('change-password-form');
@@ -9,7 +7,7 @@ const deleteAccountButton = document.getElementById('delete-account-button');
 
 let currentUser = null;
 
-supabase.auth.onAuthStateChange((event, session) => {
+window.supabase.auth.onAuthStateChange((event, session) => {
     if (session && session.user) {
         currentUser = session.user;
         userEmail.textContent = currentUser.email;
@@ -19,7 +17,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 });
 
 logoutButton.addEventListener('click', async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await window.supabase.auth.signOut();
     if (error) {
         console.error('Error al cerrar sesión:', error);
     }
@@ -35,7 +33,7 @@ changePasswordForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    const { data, error } = await supabase.auth.updateUser({
+    const { data, error } = await window.supabase.auth.updateUser({
         password: newPassword
     });
 
@@ -58,7 +56,7 @@ deleteAccountButton.addEventListener('click', async () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${supabase.auth.session().access_token}` // Pass the user's JWT
+                    'Authorization': `Bearer ${window.supabase.auth.session().access_token}` // Pass the user's JWT
                 },
                 body: JSON.stringify({ userId: currentUser.id }) // Pass the user ID
             });

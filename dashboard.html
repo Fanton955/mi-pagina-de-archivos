@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Filedrop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">Filedrop</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" id="user-email" href="#"></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="settings.html">Configuración</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-secondary" id="logout-button">Cerrar Sesión</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Tus Archivos</h2>
+                <p>Sube nuevos archivos y gestiona los existentes.</p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div id="upload-area" class="upload-area">
+                    <div id="upload-container" class="upload-container">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-text">
+                            <p><strong>Haz clic para subir</strong> o arrastra y suelta</p>
+                            <p class="small">Cualquier tipo de archivo</p>
+                        </div>
+                        <input id="file-input" type="file" class="d-none" />
+                    </div>
+                    <div id="preview-area" class="preview-area"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <h3>Archivos Subidos</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nombre del Archivo</th>
+                                <th>Tamaño</th>
+                                <th>Fecha de Subida</th>
+                                <th>Enlace</th>
+                                <th>Compartir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="file-list">
+                            <!-- File list will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Supabase UMD CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+    <script src="supabase-init.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

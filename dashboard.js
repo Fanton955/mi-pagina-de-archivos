@@ -62,7 +62,6 @@ function handleFiles(files) {
     if (files.length === 0) {
         return;
     }
-    // We only handle one file at a time for simplicity
     const file = files[0];
     createPreview(file);
     uploadFile(file);
@@ -71,7 +70,7 @@ function handleFiles(files) {
 // --- Preview and Upload --- //
 
 function createPreview(file) {
-    previewArea.innerHTML = ''; // Clear previous previews
+    previewArea.innerHTML = '';
 
     const previewItem = document.createElement('div');
     previewItem.className = 'preview-item';
@@ -131,7 +130,7 @@ function uploadFile(file) {
         () => {
             getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                 uploadStatus.innerHTML = `¡Subido! <a href="${downloadURL}" target="_blank">Enlace de Descarga</a>`;
-                listFiles(); // Refresh the file list
+                listFiles();
             });
         }
     );
@@ -158,6 +157,7 @@ async function listFiles() {
                 <td>${(metadata.size / 1024 / 1024).toFixed(2)} MB</td>
                 <td>${new Date(metadata.timeCreated).toLocaleDateString()}</td>
                 <td><a href="${downloadURL}" target="_blank">enlace</a></td>
+                <td><button class="btn btn-sm btn-outline-primary copy-link-btn" data-url="${downloadURL}">Copiar</button></td>
             `;
             fileList.appendChild(row);
         }
@@ -165,6 +165,26 @@ async function listFiles() {
         console.error('Error al listar los archivos:', error);
     }
 }
+
+fileList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('copy-link-btn')) {
+        const button = e.target;
+        const url = button.dataset.url;
+        navigator.clipboard.writeText(url).then(() => {
+            const originalText = button.textContent;
+            button.textContent = '¡Copiado!';
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-success');
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-primary');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    }
+});
 
 function getFileIcon(mimeType) {
     if (!mimeType) return 'fas fa-file';
@@ -188,5 +208,5 @@ function getFileIcon(mimeType) {
         }
     }
 
-    return 'fas fa-file'; // Default icon
+    return 'fas fa-file';
 }

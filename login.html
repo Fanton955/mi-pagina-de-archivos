@@ -31,6 +31,9 @@
                         <p class="text-center mt-3">
                             ¿No tienes una cuenta? <a href="register.html">Regístrate</a>
                         </p>
+                        <p class="text-center mt-3">
+                            ¿No recibiste el correo de verificación? <button id="resend-email-button" class="btn btn-link p-0">Reenviar</button>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -42,6 +45,7 @@
 
         const loginForm = document.getElementById('login-form');
         const errorMessage = document.getElementById('error-message');
+        const resendEmailButton = document.getElementById('resend-email-button');
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -53,10 +57,35 @@
                 password: password,
             });
 
+            console.log('Data after login attempt:', data);
+            console.log('Error after login attempt:', error);
+
             if (error) {
                 errorMessage.textContent = `Error: ${error.message}`;
             } else {
-                window.location.href = 'dashboard.html';
+                if (data.session === null) {
+                    errorMessage.textContent = 'Por favor, verifica tu correo electrónico antes de iniciar sesión.';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            }
+        });
+
+        resendEmailButton.addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                errorMessage.textContent = 'Por favor, introduce tu correo electrónico para reenviar el enlace.';
+                return;
+            }
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email: email,
+            });
+            if (error) {
+                errorMessage.textContent = `Error al reenviar: ${error.message}`;
+            } else {
+                errorMessage.textContent = '¡Correo de verificación reenviado! Revisa tu bandeja de entrada.';
+                errorMessage.className = 'text-success text-center mt-3';
             }
         });
     </script>
